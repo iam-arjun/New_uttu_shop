@@ -1,6 +1,6 @@
 const express = require('express')
 
-const port = process.env.PORT || 8000
+const port = process.env.PORT || 5000
 const cors = require("cors");
 const jwt = require('jsonwebtoken');
 const sessions = require('express-session');
