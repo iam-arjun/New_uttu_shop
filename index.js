@@ -12,7 +12,7 @@ const SignupObj = require('./Model/SignupModel')
 const LoginObj = require('./Model/LoginModel')
 const CartObj = require('./Model/CartItem')
 const OrderSummary = require('./Model/OrderSummary');
-const path = require('path')
+
 
 
 
@@ -33,7 +33,7 @@ reactApp.use(
     })
 );
 
-reactApp.use(express.static(path.join(__dirname, '../ReactEcommerce/dist')))
+
 
 
 const oneDay = 60 * 60 * 1000
@@ -47,9 +47,7 @@ reactApp.use(sessions({
 }));
 
 
-reactApp.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, '../ReactEcommerce/dist/index.html'))
-})
+
 // SIGNING UP THE USER
 
 reactApp.post('/signup', async (req, res) => {
