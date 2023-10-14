@@ -25,6 +25,9 @@ reactApp.use(cookieParser());    //allowing json data to be received from client
 
 
 // here we are setting up cors so that we can make requests from cross-origin resources
+reactApp.use(
+    cors()
+);
 
 
 
