@@ -25,26 +25,13 @@ reactApp.use(cookieParser());    //allowing json data to be received from client
 
 
 // here we are setting up cors so that we can make requests from cross-origin resources
-reactApp.use(
-    cors({
-        origin: '*',
-
-
-    })
-);
 
 
 
 
 const oneDay = 60 * 60 * 1000
 
-//session middleware
-reactApp.use(sessions({
-    secret: "thisismysecrctekeyfhrgfgrfrty84fwir767",
-    saveUninitialized: true,
-    cookie: { maxAge: oneDay },
-    resave: false
-}));
+
 
 
 
