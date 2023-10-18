@@ -26,10 +26,22 @@ reactApp.use(cookieParser());    //allowing json data to be received from client
 
 // here we are setting up cors so that we can make requests from cross-origin resources
 reactApp.use(
-    cors({origin:'https://652a17fa03f1d662d828e185--clinquant-capybara-1221e8.netlify.app'})
+    cors()
 );
 
-
+app.use(function(req, res, next) {
+    res.header("Access-Control-Allow-Origin", CLIENT_ORIGIN);
+    res.header(
+      "Access-Control-Allow-Headers",
+      "Origin, X-Requested-With, Content-Type, Accept"
+    );
+    res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE");
+    res.header("Access-Control-Allow-Credentials", true);
+    if (req.method === "OPTIONS") {
+      return res.sendStatus(204);
+    }
+    next();
+  });
 
 
 const oneDay = 60 * 60 * 1000
