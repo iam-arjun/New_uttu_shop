@@ -11,7 +11,9 @@ require('./dbconn')
 const SignupObj = require('./Model/SignupModel')
 const LoginObj = require('./Model/LoginModel')
 const CartObj = require('./Model/CartItem')
-const OrderSummary = require('./Model/OrderSummary');
+const ShippingObj = require('./Model/ShippingDetail')
+const FinalOrderObj = require('./Model/FinalOrderSummary')
+
 
 
 
@@ -25,21 +27,10 @@ reactApp.use(cookieParser());    //allowing json data to be received from client
 
 
 // here we are setting up cors so that we can make requests from cross-origin resources
-reactApp.use(cors({ credentials: true, origin: 'https://65314a07ffa99c2f76fa65cd--friendly-strudel-77e1a4.netlify.app' }));
+reactApp.use(cors());
 
-// reactApp.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*");
-//     res.header(
-//         "Access-Control-Allow-Headers",
-//         "Origin, X-Requested-With, Content-Type, Accept"
-//     );
-//     res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE");
-//     res.header("Access-Control-Allow-Credentials", true);
-//     if (req.method === "OPTIONS") {
-//         return res.sendStatus(204);
-//     }
-//     next();
-// });
+
+// reactApp.use(cors({ credentials: true, origin: 'https://65314a07ffa99c2f76fa65cd--friendly-strudel-77e1a4.netlify.app' }));
 
 
 const oneDay = 60 * 60 * 1000
@@ -109,7 +100,7 @@ reactApp.post('/login', async (req, res) => {
 
 
         if (!user || user.password !== password) {
-            return res.status(401).json({ message: 'Invalid credentials' });
+            return res.status(401).json('Email or password is not matched')
         }
 
         // You can generate a JWT token here and send it back to the client for session management
@@ -258,13 +249,20 @@ reactApp.post('/addtocart', async (req, res) => {
 
 
     try {
-        const repeatedItems = await CartObj.findOne({ id: req.body.id })
-        console.log(repeatedItems)
 
 
-        if (repeatedItems) {
-            res.send('Already have this items on the cart')
-            return;
+        // Check if the item exists in the database
+        const item = await CartObj.findOne({ id: req.body.id })
+        if (item) {
+
+            const updatedItem = await CartObj.findOneAndUpdate({ id: req.body.id }, { itemqty: req.body.item_qty }, { new: true });
+
+            if (!updatedItem) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+
+            return res.json(updatedItem);
+
         }
         else {
             const cartDoc = new CartObj({
@@ -274,15 +272,14 @@ reactApp.post('/addtocart', async (req, res) => {
                 itemimg: req.body.item_img,
                 itemprice: req.body.item_price,
                 itemqty: req.body.item_qty,
-                featured: req.body.featured
+                featured: req.body.featured,
+                email: req.body.email
 
 
 
             })
-
             await cartDoc.save()
             res.send(cartDoc)
-
         }
 
 
@@ -290,7 +287,7 @@ reactApp.post('/addtocart', async (req, res) => {
 
     } catch (error) {
         console.log(error)
-        res.send(error)
+
 
     }
 
@@ -307,18 +304,10 @@ reactApp.get('/addtocart', async (req, res) => {
 
     try {
         const myItems = await CartObj.find()
-
-        // checking for duplicasy
-
-
-
-        const unique2 = myItems.filter((obj, index) => {
+        const uniqueItems = myItems.filter((obj, index) => {
             return index === myItems.findIndex(o => obj.id === o.id);
         });
-
-
-        res.json(unique2)
-
+        res.send(uniqueItems)
 
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -334,10 +323,13 @@ reactApp.put('/decitemqty/:id', async (req, res) => {
 
         const itemid = req.params.id
 
-        const product = await CartObj.findOne({ _id: itemid })
+
+        const product = await CartObj.findOne({ id: itemid })
+
 
         if (product.itemqty > 1) {
             product.itemqty = product.itemqty - 1
+
 
         }
         else {
@@ -345,7 +337,7 @@ reactApp.put('/decitemqty/:id', async (req, res) => {
         }
 
         // Find the item by ID and update its description
-        const updatedItem = await CartObj.findByIdAndUpdate(itemid, { itemqty: product.itemqty }, { new: true });
+        const updatedItem = await CartObj.findOneAndUpdate({ id: itemid }, { itemqty: product.itemqty }, { new: true });
 
         if (!updatedItem) {
             return res.status(404).json({ message: 'Item not found' });
@@ -371,26 +363,36 @@ reactApp.put('/incitemqty/:id', async (req, res) => {
 
     try {
 
+
         const itemid = req.params.id
 
-        const product = await CartObj.findOne({ _id: itemid })
+        const product = await CartObj.findOne({ id: itemid })
+        if (product) {
 
-        if (product.itemqty < 7) {
-            product.itemqty = product.itemqty + 1
+            if (product.itemqty < 7) {
+                product.itemqty = product.itemqty + 1
 
+
+            }
+            else {
+                product.itemqty = 7
+            }
+
+            // Find the item by ID and update its description
+            const updatedItem = await CartObj.findOneAndUpdate({ id: itemid }, { itemqty: product.itemqty }, { new: true });
+
+            if (!updatedItem) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+
+
+            return res.json(updatedItem);
         }
         else {
-            product.itemqty = 7
+            res.json('Item not found')
         }
 
-        // Find the item by ID and update its description
-        const updatedItem = await CartObj.findByIdAndUpdate(itemid, { itemqty: product.itemqty }, { new: true });
 
-        if (!updatedItem) {
-            return res.status(404).json({ message: 'Item not found' });
-        }
-
-        return res.json(updatedItem);
 
     } catch (error) {
         console.error('Error updating item:', error);
@@ -413,59 +415,84 @@ reactApp.delete('/delitem/:id', async (req, res) => {
         const itemId = req.params.id
 
         // Find the item by ID and delete it
+
         const deletedItem = await CartObj.findByIdAndDelete(itemId);
 
-        if (!deletedItem) {
-            return res.status(404).json({ message: 'Item not found' });
+
+
+        if (deletedItem) {
+            return res.json({ message: 'Item deleted successfully', data: deletedItem });
+
+
+        }
+        else {
+
+            return res.json({ message: 'Item not found' });
+
         }
 
-        return res.json({ message: 'Item deleted successfully' });
     } catch (error) {
         console.error('Error deleting item:', error);
         return res.status(500).json({ message: 'Internal server error' });
     }
 });
 
-// ORDER SUMMARY GET API 
 
-reactApp.get('/ordersummary', async (req, res) => {
+
+
+
+// shipping address post
+reactApp.put('/shipping', async (req, res) => {
 
     try {
 
-        const cartItems = await CartObj.find()
+        const shippingDoc = new ShippingObj({
 
-        const unique2 = cartItems.filter((obj, index) => {
-            return index === cartItems.findIndex(o => obj.id === o.id);
-        });
-
-
-        let total_cart_items = 0
-        let total_payable_amt = 0
-
-        for (let i = 0; i < unique2.length; i++) {
-
-
-            total_cart_items = unique2[i].itemqty + total_cart_items
-            total_payable_amt = unique2[i].itemqty * unique2[i].itemprice + total_payable_amt
-
-
-        }
-
-        const myObj = new OrderSummary({
-            total_items: total_cart_items,
-            total_payable: total_payable_amt
+            email: req.body.EMAIL,
+            fullname: req.body.FULLNAME,
+            phone: req.body.PHONENUM,
+            country: req.body.COUNTRYNAME,
+            state: req.body.PROVINCE,
+            city: req.body.CITYNAME,
+            streetaddress: req.body.STREETADDRESS
 
         })
-        if (myObj) {
-            myObj.save()
-            res.json(myObj)
+
+        let existingShipping = await ShippingObj.find()
+        let eachShippingLength = existingShipping.filter((el) => { return el.email === req.body.EMAIL })
+        if (eachShippingLength.length === 1) {
+            // Find the item by ID and update its description
+            const updatedItem = await ShippingObj.findOneAndUpdate({ email: req.body.EMAIL }, {
+                email: req.body.EMAIL,
+                fullname: req.body.FULLNAME,
+                phone: req.body.PHONENUM,
+                country: req.body.COUNTRYNAME,
+                state: req.body.PROVINCE,
+                city: req.body.CITYNAME,
+                streetaddress: req.body.STREETADDRESS
+            }, { new: true });
+            console.log()
+
+            if (!updatedItem) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+
+            return res.json(updatedItem);
+
+
         }
         else {
-            console.log('Error in getting the order summary!!')
+
+            await shippingDoc.save()
+            res.send(shippingDoc)
         }
+
+
+
 
     } catch (error) {
         console.log(error)
+        res.send(error)
 
     }
 
@@ -473,6 +500,120 @@ reactApp.get('/ordersummary', async (req, res) => {
 
 
 })
+
+// shipping address get
+reactApp.get('/shipping', async (req, res) => {
+
+    try {
+        const myData = await ShippingObj.find()
+
+        res.json(myData)
+
+
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+
+
+})
+
+// shipping delete
+reactApp.delete('/delshipping/:id', async (req, res) => {
+    try {
+        const itemId = req.params.id
+
+        // Find the item by ID and delete it
+
+        const deletedItem = await ShippingObj.findByIdAndDelete(itemId);
+
+
+
+        if (deletedItem) {
+            return res.json({ message: 'Item deleted successfully', data: deletedItem });
+
+
+        }
+        else {
+
+            return res.json({ message: 'Item not found' });
+
+        }
+
+    } catch (error) {
+        console.error('Error deleting item:', error);
+        return res.status(500).json({ message: 'Internal server error' });
+    }
+});
+
+// final OrDER post
+reactApp.put('/finalorder', async (req, res) => {
+
+    try {
+
+        const finalOrderDoc = new FinalOrderObj({
+            finalemail: req.body.EMAIL,
+            shipping: req.body.SHIPPING_ADDRESS,
+            cartitems: req.body.CART_ITEMS,
+            ordersummary: req.body.ORDER_SUMMARY,
+            paymentmethod: req.body.PAYMENT_GATEWAY
+
+
+        })
+
+        let existingFinalOrder = await FinalOrderObj.find()
+        let eachFinalOrderLength = existingFinalOrder.filter((el) => { return el.finalemail === req.body.EMAIL })
+        if (eachFinalOrderLength.length === 1) {
+            // Find the item by ID and update its description
+            const updatedItem = await FinalOrderObj.findOneAndUpdate({ finalemail: req.body.EMAIL }, {
+                shipping: req.body.SHIPPING_ADDRESS,
+                cartitems: req.body.CART_ITEMS,
+                ordersummary: req.body.ORDER_SUMMARY,
+                paymentmethod: req.body.PAYMENT_GATEWAY
+            }, { new: true });
+            console.log()
+
+            if (!updatedItem) {
+                return res.status(404).json({ message: 'Item not found' });
+            }
+
+            return res.json(updatedItem);
+
+
+        }
+        else {
+
+            await finalOrderDoc.save()
+            res.send(finalOrderDoc)
+        }
+
+
+
+
+    } catch (error) {
+        console.log(error)
+        res.send(error)
+
+    }
+
+
+
+
+})
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

@@ -13,9 +13,9 @@ const LoginSchema = mongoose.Schema(
         password: {
             type: String
         },
-        token:{
-            type:String
-            
+        token: {
+            type: String
+
         }
 
     }

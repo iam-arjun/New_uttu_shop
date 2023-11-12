@@ -17,7 +17,7 @@ const CartSchema = mongoose.Schema(
         },
 
         itemprice: {
-            type: Number
+            type: String
         },
 
         itemqty: {
@@ -25,6 +25,9 @@ const CartSchema = mongoose.Schema(
         },
         featured: {
             type: Boolean
+        },
+        email: {
+            type: String
         },
 
 
