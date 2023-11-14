@@ -31,7 +31,7 @@ reactApp.use(cookieParser());    //allowing json data to be received from client
 
 // reactApp.use(cors({ credentials: true, origin: 'https://65314a07ffa99c2f76fa65cd--friendly-strudel-77e1a4.netlify.app' }));
 
-reactApp.use(cors({ credentials: true, origin: 'https://6552fd876f021314354f19e4--illustrious-speculoos-a1d54e.netlify.app' }));
+reactApp.use(cors({ credentials: true, origin: 'https://655310e670e0f12108261c39--illustrious-speculoos-a1d54e.netlify.app' }));
 
 // reactApp.use(function (req, res, next) {
 //     res.header("Access-Control-Allow-Origin", "*")€z;
