@@ -15,43 +15,19 @@ const ShippingObj = require('./Model/ShippingDetail')
 const FinalOrderObj = require('./Model/FinalOrderSummary')
 
 
-
-
-
-
-
 const reactApp = express()
 
 reactApp.use(express.json());
-reactApp.use(cookieParser());    //allowing json data to be received from client
+reactApp.use(cookieParser());
+//allowing json data to be received from client
+
+// reactApp.use(cors())
 
 
 // here we are setting up cors so that we can make requests from cross-origin resources
 
 
-// reactApp.use(cors({ credentials: true, origin: 'https://65314a07ffa99c2f76fa65cd--friendly-strudel-77e1a4.netlify.app' }));
-
-reactApp.use(cors({ credentials: true, origin: 'https://6553135c36adbd20197dc5c7--illustrious-speculoos-a1d54e.netlify.app' }));
-
-// reactApp.use(function (req, res, next) {
-//     res.header("Access-Control-Allow-Origin", "*")€z;
-//     res.header(
-//         "Access-Control-Allow-Headers",
-//         "Origin, X-Requested-With, Content-Type, Accept"
-//     );
-//     res.header("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE");
-//     res.header("Access-Control-Allow-Credentials", true);
-//     if (req.method === "OPTIONS") {
-//         return res.sendStatus(204);
-//     }
-//     next();
-// });
-
-
-
-const oneDay = 60 * 60 * 1000
-
-
+reactApp.use(cors({ credentials: true, origin: 'https://6554eff9fc33a53142a1813a--peppy-empanada-5388ba.netlify.app' }));
 
 
 
@@ -60,18 +36,29 @@ const oneDay = 60 * 60 * 1000
 reactApp.post('/signup', async (req, res) => {
 
     try {
+        let existingUser = await SignupObj.findOne({ email: req.body.EMAIL })
+        if (existingUser) {
+            res.status(401).json('This email is already registered!😑')
 
-        const signupDoc = new SignupObj({
+        }
+        else {
+            const signupDoc = new SignupObj({
 
-            fullname: req.body.NAME,
-            email: req.body.EMAIL,
-            password: req.body.PASSWORD,
-            cpassword: req.body.CPASSWORD
+                fullname: req.body.NAME,
+                email: req.body.EMAIL,
+                password: req.body.PASSWORD,
+                cpassword: req.body.CPASSWORD
 
-        })
+            })
 
-        await signupDoc.save()
-        res.send(signupDoc)
+            await signupDoc.save()
+            res.send(signupDoc)
+
+
+
+
+        }
+
 
 
     } catch (error) {
