@@ -27,7 +27,7 @@ reactApp.use(cookieParser());
 // here we are setting up cors so that we can make requests from cross-origin resources
 
 
-reactApp.use(cors({ credentials: true, origin: 'https://6554eff9fc33a53142a1813a--peppy-empanada-5388ba.netlify.app' }));
+reactApp.use(cors({ credentials: true, origin: 'https://peppy-empanada-5388ba.netlify.app' }));
 
 
 
